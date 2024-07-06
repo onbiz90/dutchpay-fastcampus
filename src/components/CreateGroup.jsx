@@ -1,17 +1,45 @@
 import { Form } from "react-bootstrap"
 import { CenteredOverlayForm } from "./shared/CenteredOverlayForm"
-import { useSetRecoilState } from "recoil"
+import { useRecoilState, useSetRecoilState } from "recoil"
 import { groupNameState } from "../state/groupName"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ROUTES } from "../routes"
+import { ROUTES, ROUTE_UTILS } from "../routes"
+import { post } from 'aws-amplify/api';
+import { groupIdState } from "../state/groupId"
+
 
 export const CreateGroup = () => {
     const [validated, setValidated] = useState(false)
     const [validGroupName, setValidGroupName] = useState(false)
-    const setGroupName = useSetRecoilState(groupNameState)
+    const setGroupId = useSetRecoilState(groupIdState)
+    const [groupName, setGroupName] = useRecoilState(groupNameState)
 
     const navigate = useNavigate()
+
+    const saveGroupName = async () => {
+        try{
+            const { body } = await post({
+                apiName: "groupsApi",
+                path: "/groups",
+                options: {
+                    body: {
+                        groupName: groupName
+                    }
+                }
+            }).response
+
+            const data = await body.json()
+            const { guid } = data.data
+            
+            setGroupId(guid)
+            navigate(ROUTE_UTILS.ADD_MEMBERS(guid)) // ex. /groups/2222/members
+            // navigate(ROUTES.ADD_MEMBERS)
+        } catch (e){
+            const errorMessage = JSON.parse(e.response.body).error
+            alert(errorMessage)
+        }
+    }
 
     const handleSubmit = (event) => {
         event.preventDefault()
@@ -19,7 +47,7 @@ export const CreateGroup = () => {
         
         if(form.checkValidity()){
             setValidGroupName(true)
-            navigate(ROUTES.ADD_MEMBERS)
+            saveGroupName()
         } else {
             event.stopPropagation()
             setValidGroupName(false)

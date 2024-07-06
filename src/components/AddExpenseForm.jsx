@@ -4,6 +4,8 @@ import { useRecoilValue, useSetRecoilState } from "recoil"
 import { groupMembersState } from "../state/groupMembers"
 import { expensesState } from "../state/expenses"
 import styled from "styled-components"
+import { put } from 'aws-amplify/api';
+import { groupIdState } from "../state/groupId"
 
 export const AddExpenseForm = () => {
     // 비용 추가하기 입력 요소들 - 결제일, 비용에 대한 설명, 비용, 결제자
@@ -19,6 +21,7 @@ export const AddExpenseForm = () => {
     const setExpense = useSetRecoilState(expensesState)
     
     const members = useRecoilValue(groupMembersState)
+    const guid = useRecoilValue(groupIdState)
     const [validated, setValidated] = useState(false)
 
     // 필수 입력 요소들에 대한 유효성을 검증하는 State
@@ -38,21 +41,50 @@ export const AddExpenseForm = () => {
         return descValid && amountValid && payerValid
     }
 
+    const saveExpense = async (expense) => {
+        setExpense(expenses => [
+            ...expenses,
+            expense,
+        ])
+        
+        try {
+            const restOperation = put({
+                apiName: "groupsApi",
+                path: `/groups/${guid}/expenses`,
+                options: {
+                    body: {
+                        expense: expense
+                    }
+                }
+            });
+            const response = await restOperation.response;
+            console.log('PUT call succeeded: ', response);
+        } catch (e) {
+            const errorMessage = JSON.parse(e.response.body).error
+            alert("비용 추가에 실패했습니다. 다시 시도해 주세요.")
+        }
+    }
+
     const handleSubmit = (e) => {
         e.preventDefault()
 
         if(checkFormValidity()){
             const newExpense = {
-                date, 
-                desc, 
-                amount, 
-                payer
+                date, desc, amount, payer
             }
+
+            saveExpense(newExpense)
+            // const newExpense = {
+            //     date, 
+            //     desc, 
+            //     amount, 
+            //     payer
+            // }
             
-            setExpense(expense => [
-                ...expense,
-                newExpense,
-            ])
+            // setExpense(expense => [
+            //     ...expense,
+            //     newExpense,
+            // ])
         }
 
         setValidated(true)

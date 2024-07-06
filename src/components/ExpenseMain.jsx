@@ -1,4 +1,4 @@
-import { Col, Container, Row } from "react-bootstrap"
+import { Button, Col, Container, Row } from "react-bootstrap"
 import { AddExpenseForm } from "./AddExpenseForm"
 import { ExpenseTable } from "./ExpenseTable"
 import styled from "styled-components"
@@ -6,8 +6,28 @@ import { useRecoilValue } from "recoil"
 import { groupNameState } from "../state/groupName"
 import { SettlementSummary } from "./SettlementSummary"
 import { ServiceLogo } from "./shared/ServiceLogo"
+import { useGroupData } from "../hooks/useGroupData"
+import { ShareFill } from "react-bootstrap-icons"
 
 export const ExpenseMain = () => {
+    useGroupData()
+    
+    const handleSharing = () => {
+        // Mobile
+        if(navigator.userAgent.match(/iphone|android/i) && navigator.share){
+            navigator.share({
+                url: window.location.href
+            })
+        } 
+        // Desktop
+        else {
+            navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                alert("공유 링크가 클립 보드에 복사 되었습니다. 그룹 멤버들과 공유해 보세요!")
+            })
+        }
+    }
+
     return (
         <Container fluid>
             <Row>
@@ -18,6 +38,10 @@ export const ExpenseMain = () => {
                     <RightPane />
                 </Col>
             </Row>
+            <StyledShareButton data-testId="share-btn" onClick={handleSharing}>
+                <ShareFill/>
+            </StyledShareButton>
+            
         </Container>
     )
 }
@@ -55,6 +79,20 @@ const RightPane = () => {
         </StyledRightPaneWrapper>
     )
 }
+
+const StyledShareButton = styled.div`
+    border-radius: 50%;
+    background-color: #683DA6;
+    position: fixed;
+    width: 55px;
+    height: 55px;
+    right: 40px;
+    bottom: 45px;
+    filter: drop-shadow(4px 4px 6px rgba(0, 0, 0, 0.25));
+    color: white;
+    font-size: 30px;
+    text-align: center;
+`
 
 const StyledGapRow = styled(Row)`
     gap: 5vh;
